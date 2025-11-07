@@ -112,7 +112,7 @@ public class GatewayServiceImpl implements GatewayService {
             result.setPayment(gatewayMapper.toPaymentDto(paymentResponse));
             return result;
         } catch (SagaException e) {
-            throw new ServiceUnavailableException(ANSWER_FOR_SERVICE_UNAVAILABLE);
+            throw new ServiceUnavailableException(e.getMessage());
         }
     }
 
