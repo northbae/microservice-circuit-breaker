@@ -22,7 +22,7 @@ public class CustomExceptionHandler {
 
     @ExceptionHandler(ServiceUnavailableException.class)
     public ResponseEntity<ErrorResponse> handleServiceUnavailableException(ServiceUnavailableException serviceUnavailableException) {
-        return getResponse(serviceUnavailableException, HttpStatus.INTERNAL_SERVER_ERROR, serviceUnavailableException.getMessage());
+        return getResponse(serviceUnavailableException, HttpStatus.SERVICE_UNAVAILABLE, serviceUnavailableException.getMessage());
     }
 
     private ResponseEntity<ErrorResponse> getResponse(Exception exception, HttpStatus httpStatus, String message) {
