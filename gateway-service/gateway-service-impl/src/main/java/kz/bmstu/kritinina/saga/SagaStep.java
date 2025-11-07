@@ -13,4 +13,5 @@ public class SagaStep<T> {
     private Function<SagaContext, T> action;
     private Consumer<SagaContext> compensation;
     private boolean critical;
+    private String serviceName;
 }

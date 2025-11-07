@@ -70,7 +70,7 @@ public class GatewayServiceImpl implements GatewayService {
             return gatewayMapper.toCarPage(result);
         }
         catch (CircuitBreakerException e) {
-            throw new ServiceUnavailableException(ANSWER_FOR_SERVICE_UNAVAILABLE);
+            throw new ServiceUnavailableException("Cars Service unavailable");
         }
     }
 
@@ -136,6 +136,7 @@ public class GatewayServiceImpl implements GatewayService {
                                 carClient.changeAvailability(car.getCarUid());
                             }
                         })
+                        .serviceName("Car")
                         .build(),
                 SagaStep.builder()
                         .name("create-payment")
@@ -151,6 +152,7 @@ public class GatewayServiceImpl implements GatewayService {
                                 paymentClient.cancelPayment(payment.getPaymentUid());
                             }
                         })
+                        .serviceName("Payment")
                         .build(),
                 SagaStep.builder()
                         .name("create-rental")
@@ -177,6 +179,7 @@ public class GatewayServiceImpl implements GatewayService {
                                 rentalClient.cancelRental(rental.getRentalUid(), user);
                             }
                         })
+                        .serviceName("Payment")
                         .build()
         );
     }
