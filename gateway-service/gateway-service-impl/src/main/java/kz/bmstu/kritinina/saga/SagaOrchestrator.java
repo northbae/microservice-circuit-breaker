@@ -23,7 +23,7 @@ public class SagaOrchestrator {
                 } catch (Exception e) {
                     if (step.isCritical()) {
                         rollback(executedSteps, context);
-                        throw new SagaException(step.getServiceName() + "Service unavailable");
+                        throw new SagaException(step.getServiceName() + " Service unavailable");
                     }
                 }
             }
