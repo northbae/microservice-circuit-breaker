@@ -1,0 +1,104 @@
+name: GitHub Classroom Workflow
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+jobs:
+  build:
+    name: Autograding
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - uses: docker/setup-buildx-action@v2
+
+
+      - name: Set up JDK 17 (Corretto)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'corretto'
+
+      - name: Run unit tests - cars
+        run: |
+          cd cars-service
+          mvn clean install
+          cd cars-service-impl
+          mvn clean test -Dtest="kz.bmstu.kritinina.service.CarsServiceImplTest"
+        env:
+          SPRING_PROFILES_ACTIVE: test
+
+      - name: Run unit tests - payment
+        run: |
+          cd payment-service
+          mvn clean install
+          cd payment-service-impl
+          mvn clean test -Dtest="kz.bmstu.kritinina.service.PaymentServiceImplTest"
+        env:
+          SPRING_PROFILES_ACTIVE: test
+
+      - name: Run unit tests - rental
+        run: |
+          cd rental-service
+          mvn clean install
+          cd rental-service-impl
+          mvn clean test -Dtest="kz.bmstu.kritinina.service.RentalServiceImplTest"
+        env:
+          SPRING_PROFILES_ACTIVE: test
+
+      - name: Build with Maven
+        run: |
+          cd cars-service
+          mvn clean package -DskipTests
+          cd ../payment-service
+          mvn clean package -DskipTests
+          cd ../rental-service
+          mvn clean package -DskipTests
+          cd ../gateway-service
+          mvn clean package -DskipTests
+
+      - name: Build images
+        timeout-minutes: 10
+        run: docker compose build
+
+      - name: Run containers
+        timeout-minutes: 5
+        run: |
+          docker compose up -d
+          ./scripts/wait-script.sh
+        env:
+          WAIT_PORTS: 8080,8070,8060,8050
+
+      # TODO setup variant, service and port
+
+      - name: Run API Tests
+        timeout-minutes: 5
+        run: ./scripts/test-script.sh
+        env:
+          VARIANT: v3
+          SERVICE_NAME: gateway-service
+          PORT_NUMBER: 8080
+
+      - uses: education/autograding@v1
+        id: autograder
+        continue-on-error: true
+
+      - name: Github auto grader mark
+        uses: Romanow/google-sheet-autograder-marker@v1.0
+        with:
+          google_token: ${{secrets.GOOGLE_API_KEY}}
+          sheet_id: "1xkgjUX6Qmk7rdJG-QPOToav-HWWtthJjnShIKnw3oIY"
+          homework_number: 3
+          user_column: 'D'
+          column_offset: 'F'
+          mark: "'+"
+
+      - name: Stop containers
+        if: always()
+        continue-on-error: true
+        run: docker compose down -v

@@ -1,4 +1,5 @@
 version: "3"
+
 services:
   postgres:
     image: library/postgres:13
@@ -14,7 +15,57 @@ services:
     ports:
       - "5432:5432"
 
-# TODO добавить сервисы
+  rabbitmq:
+    image: rabbitmq:latest
+    container_name: rabbitmq
+    hostname: rabbitmq
+    restart: unless-stopped
+    environment:
+      TZ: Europe/Moscow
+      RABBITMQ_DEFAULT_USER: rabbit
+      RABBITMQ_DEFAULT_PASS: rabbit
+      RABBITMQ_DEFAULT_VHOST: vhost
+    volumes:
+      - ./rabbitmq:/var/lib/rabbitmq￼
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  gateway-service:
+    image: gateway-service
+    build:
+      context: .
+      dockerfile: gateway-service/Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      - cars-service
+      - rental-service
+      - payment-service
+
+  cars-service:
+    image: cars-service
+    build: cars-service/
+    ports:
+      - "8070:8070"
+    depends_on:
+      - postgres
+
+  rental-service:
+    image: rental-service
+    build: rental-service/
+    ports:
+      - "8060:8060"
+    depends_on:
+      - postgres
+
+  payment-service:
+    image: payment-service
+    build: payment-service/
+    ports:
+      - "8050:8050"
+    depends_on:
+      - postgres
 
 volumes:
   db-data:

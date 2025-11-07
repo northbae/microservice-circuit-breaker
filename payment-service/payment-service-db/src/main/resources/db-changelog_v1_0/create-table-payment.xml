@@ -1,0 +1,19 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.6.xsd">
+
+    <changeSet id="table-payment" author="Lena">
+        <sql>
+            CREATE TABLE payment
+            (
+            id          SERIAL PRIMARY KEY,
+            payment_uid uuid        NOT NULL,
+            status      VARCHAR(20) NOT NULL
+            CHECK (status IN ('PAID', 'CANCELED')),
+            price       INT         NOT NULL
+            );
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

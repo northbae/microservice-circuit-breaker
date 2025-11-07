@@ -1,0 +1,26 @@
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.6.xsd">
+
+    <changeSet id="table-car" author="Lena">
+        <sql>
+            CREATE TABLE car
+            (
+            id                  SERIAL PRIMARY KEY,
+            car_uid             uuid UNIQUE NOT NULL,
+            brand               VARCHAR(80) NOT NULL,
+            model               VARCHAR(80) NOT NULL,
+            registration_number VARCHAR(20) NOT NULL,
+            power               INT,
+            price               INT         NOT NULL,
+            type                VARCHAR(20)
+            CHECK (type IN ('SEDAN', 'SUV', 'MINIVAN', 'ROADSTER')),
+            availability        BOOLEAN     NOT NULL
+            );
+            insert into car (id, car_uid, brand, model, registration_number, power, type, price, availability)
+            values (1, '109b42f3-198d-4c89-9276-a7520a7120ab', 'Mercedes Benz', 'GLA 250', 'ЛО777Х799', 249, 'SEDAN', 3500, true);
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>
