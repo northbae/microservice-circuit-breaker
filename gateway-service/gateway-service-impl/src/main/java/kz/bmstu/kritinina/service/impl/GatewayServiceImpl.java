@@ -197,7 +197,7 @@ public class GatewayServiceImpl implements GatewayService {
     public void cancelRental(String username, UUID rentalUid) {
         // что тут сделать = хрен пойми
         RentalResponse rentalResponse = rentalClient.getRentalById(rentalUid, username).getBody();
-
+        carClient.changeAvailability(rentalResponse.getCarUid());
         //rentalClient.cancelRental(rentalUid, username);
         //paymentClient.cancelPayment(rentalResponse.getPaymentUid());
         boolean rentalCancelled = attemptCancelRentalWithTimeout(rentalUid, username);
