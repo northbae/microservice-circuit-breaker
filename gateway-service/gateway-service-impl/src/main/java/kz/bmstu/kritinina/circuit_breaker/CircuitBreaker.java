@@ -44,8 +44,11 @@ public class CircuitBreaker {
             if (state == CircuitBreakerState.OPEN) {
                 log.info("state == CircuitBreakerState.OPEN");
                 log.info(String.valueOf(lastFailureTime));
-                log.info(String.valueOf(Duration.between(lastFailureTime, Instant.now()).compareTo(timeout)));
-                if (lastFailureTime != null && Duration.between(lastFailureTime, Instant.now()).compareTo(timeout) > 0) {
+                Duration timeSinceFailure = Duration.between(lastFailureTime, Instant.now());
+                log.info("Time since last failure: {}ms, timeout: {}ms",
+                        timeSinceFailure.toMillis(), timeout.toMillis());
+
+                if (lastFailureTime != null && timeSinceFailure.compareTo(timeout) > 0) {
                     log.info("lastFailureTime != null");
                     transitionTo(CircuitBreakerState.HALF_OPENED);
                     log.info("transitionTo(CircuitBreakerState.HALF_OPENED);");
@@ -54,11 +57,15 @@ public class CircuitBreaker {
                     throw new CircuitBreakerException("Circuit breaker is OPEN");
                 }
             }
-        } catch (Exception e) {
+        } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.info("Interrupted while waiting for lock");
             throw new CircuitBreakerException("Interrupted while waiting for lock");
-        } finally {
+        } catch (Exception e) {  // ← Остальные логируем
+            log.error("Unexpected error in circuit breaker", e);
+            throw new CircuitBreakerException("Unexpected error: " + e.getMessage());
+        }
+        finally {
             if (acquired) {
                 lock.unlock();
             }
