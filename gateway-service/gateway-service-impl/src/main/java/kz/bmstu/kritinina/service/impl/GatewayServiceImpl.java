@@ -94,11 +94,16 @@ public class GatewayServiceImpl implements GatewayService {
     public RentalDto getRental(String username, UUID rentalUid) {
         RentalResponse rentalResponse = getRentalByIdWithCircuitBreaker(rentalUid, username);
         CarBaseDto carBaseDto = getCarWithFallback(rentalResponse.getCarUid());
-        PaymentDto paymentDto = getPaymentWithFallback(rentalResponse.getPaymentUid());
-        RentalDto rentalDto = gatewayMapper.toRentalDto(rentalResponse);
-        rentalDto.setCar(carBaseDto);
-        rentalDto.setPayment(paymentDto);
-        return rentalDto;
+        try {
+            PaymentDto paymentDto = getPaymentWithFallback(rentalResponse.getPaymentUid());
+            RentalDto rentalDto = gatewayMapper.toRentalDto(rentalResponse);
+            rentalDto.setCar(carBaseDto);
+            rentalDto.setPayment(paymentDto);
+            return rentalDto;
+        }
+        catch (ServiceUnavailableException e) {
+            return new RentalDto();
+        }
     }
 
     @Override
@@ -258,7 +263,8 @@ public class GatewayServiceImpl implements GatewayService {
             return gatewayMapper.toPaymentDto(paymentResponse.get());
         }
         catch (CircuitBreakerException e) {
-            return createPaymentFallback(paymentUid);
+            //return createPaymentFallback(paymentUid);
+            throw new ServiceUnavailableException("");
         }
     }
 
