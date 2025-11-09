@@ -18,5 +18,5 @@ public class RentalDto {
     private LocalDate dateFrom;
     private LocalDate dateTo;
     private CarBaseDto car;
-    private PaymentDto payment;
+    private Object payment;
 }

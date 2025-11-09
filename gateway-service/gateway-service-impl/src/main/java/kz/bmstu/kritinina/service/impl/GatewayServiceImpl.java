@@ -104,7 +104,7 @@ public class GatewayServiceImpl implements GatewayService {
         catch (ServiceUnavailableException e) {
             RentalDto rentalDto = gatewayMapper.toRentalDto(rentalResponse);
             rentalDto.setCar(carBaseDto);
-            rentalDto.setPayment(null);
+            rentalDto.setPayment(new HashMap<>());
             return rentalDto;
         }
     }
