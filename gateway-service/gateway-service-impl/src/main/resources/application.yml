@@ -24,6 +24,6 @@ feign:
     enabled: false
 circuit-breaker:
   default-config:
-    max-failure: 5
+    max-failure: 3
     min-success: 1
-    timeout: 60s
+    timeout: 10s

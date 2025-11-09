@@ -43,17 +43,20 @@ public class CircuitBreaker {
             log.info("if !aquired");
             if (state == CircuitBreakerState.OPEN) {
                 log.info("state == CircuitBreakerState.OPEN");
-
+                log.info(String.valueOf(lastFailureTime));
+                log.info(String.valueOf(Duration.between(lastFailureTime, Instant.now())));
                 if (lastFailureTime != null && Duration.between(lastFailureTime, Instant.now()).compareTo(timeout) > 0) {
                     log.info("lastFailureTime != null");
                     transitionTo(CircuitBreakerState.HALF_OPENED);
                     log.info("transitionTo(CircuitBreakerState.HALF_OPENED);");
                 } else {
+                    log.info("Circuit breaker is OPEN");
                     throw new CircuitBreakerException("Circuit breaker is OPEN");
                 }
             }
         } catch (Exception e) {
             Thread.currentThread().interrupt();
+            log.info("Interrupted while waiting for lock");
             throw new CircuitBreakerException("Interrupted while waiting for lock");
         } finally {
             if (acquired) {
@@ -63,9 +66,11 @@ public class CircuitBreaker {
         // Выполняем запрос
         try {
             T result = supplier.get();
+            log.info("T result = supplier.get()");
             onSuccess();
             return result;
         } catch (Exception e) {
+            log.info("start onFailure");
             onFailure();
             throw new CircuitBreakerException("");
         }
@@ -86,6 +91,7 @@ public class CircuitBreaker {
         try {
             failureCount = 0;
             if (state == CircuitBreakerState.HALF_OPENED) {
+                log.info("state == CircuitBreakerState.HALF_OPENED");
                 successCount++;
                 if (successCount >= minSuccess) {
                     transitionTo(CircuitBreakerState.CLOSED);
