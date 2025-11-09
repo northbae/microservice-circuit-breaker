@@ -102,7 +102,10 @@ public class GatewayServiceImpl implements GatewayService {
             return rentalDto;
         }
         catch (ServiceUnavailableException e) {
-            return new RentalDto();
+            RentalDto rentalDto = gatewayMapper.toRentalDto(rentalResponse);
+            rentalDto.setCar(carBaseDto);
+            rentalDto.setPayment(new PaymentDto());
+            return rentalDto;
         }
     }
 
@@ -263,7 +266,6 @@ public class GatewayServiceImpl implements GatewayService {
             return gatewayMapper.toPaymentDto(paymentResponse.get());
         }
         catch (CircuitBreakerException e) {
-            //return createPaymentFallback(paymentUid);
             throw new ServiceUnavailableException("");
         }
     }
@@ -282,7 +284,7 @@ public class GatewayServiceImpl implements GatewayService {
 
     private PaymentDto createPaymentFallback(UUID paymentUid) {
         PaymentDto fallback = new PaymentDto();
-        //fallback.setPaymentUid(paymentUid);
+        fallback.setPaymentUid(paymentUid);
         //fallback.setStatus(PaymentStatus.UNKNOWN);
         //fallback.setPrice(0);
         return fallback;
