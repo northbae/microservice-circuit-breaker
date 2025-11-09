@@ -276,7 +276,7 @@ public class GatewayServiceImpl implements GatewayService {
 
     private PaymentDto createPaymentFallback(UUID paymentUid) {
         PaymentDto fallback = new PaymentDto();
-        fallback.setPaymentUid(paymentUid);
+        //fallback.setPaymentUid(paymentUid);
         //fallback.setStatus(PaymentStatus.UNKNOWN);
         //fallback.setPrice(0);
         return fallback;
