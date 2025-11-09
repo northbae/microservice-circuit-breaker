@@ -260,10 +260,6 @@ public class GatewayServiceImpl implements GatewayService {
         catch (CircuitBreakerException e) {
             return createPaymentFallback(paymentUid);
         }
-        catch (Exception e) {
-            log.info(e.getMessage());
-            throw new NotFoundException("");
-        }
     }
 
     // не критично
@@ -281,8 +277,8 @@ public class GatewayServiceImpl implements GatewayService {
     private PaymentDto createPaymentFallback(UUID paymentUid) {
         PaymentDto fallback = new PaymentDto();
         fallback.setPaymentUid(paymentUid);
-        fallback.setStatus(PaymentStatus.UNKNOWN);
-        fallback.setPrice(0);
+        //fallback.setStatus(PaymentStatus.UNKNOWN);
+        //fallback.setPrice(0);
         return fallback;
     }
 
@@ -290,9 +286,9 @@ public class GatewayServiceImpl implements GatewayService {
         final String unavailable = "Недоступно";
         CarBaseDto fallback = new CarBaseDto();
         fallback.setCarUid(carUid);
-        fallback.setBrand(unavailable);
-        fallback.setModel(unavailable);
-        fallback.setRegistrationNumber(unavailable);
+        //fallback.setBrand(unavailable);
+        //fallback.setModel(unavailable);
+        //fallback.setRegistrationNumber(unavailable);
         return fallback;
     }
 
