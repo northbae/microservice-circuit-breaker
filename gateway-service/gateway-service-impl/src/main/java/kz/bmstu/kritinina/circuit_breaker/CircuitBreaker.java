@@ -44,7 +44,7 @@ public class CircuitBreaker {
             if (state == CircuitBreakerState.OPEN) {
                 log.info("state == CircuitBreakerState.OPEN");
                 log.info(String.valueOf(lastFailureTime));
-                log.info(String.valueOf(Duration.between(lastFailureTime, Instant.now())));
+                log.info(String.valueOf(Duration.between(lastFailureTime, Instant.now()).compareTo(timeout)));
                 if (lastFailureTime != null && Duration.between(lastFailureTime, Instant.now()).compareTo(timeout) > 0) {
                     log.info("lastFailureTime != null");
                     transitionTo(CircuitBreakerState.HALF_OPENED);
