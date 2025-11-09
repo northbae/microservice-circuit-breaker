@@ -29,6 +29,8 @@ import kz.bmstu.kritinina.saga.SagaOrchestrator;
 import kz.bmstu.kritinina.saga.SagaStep;
 import kz.bmstu.kritinina.service.GatewayService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -47,6 +49,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class GatewayServiceImpl implements GatewayService {
+    private static final Logger log = LoggerFactory.getLogger(GatewayServiceImpl.class);
     private final CarClient carClient;
     private final PaymentClient paymentClient;
     private final RentalClient rentalClient;
@@ -253,8 +256,13 @@ public class GatewayServiceImpl implements GatewayService {
             Optional<PaymentResponse> paymentResponse = circuitBreaker.execute(() ->
                     paymentClient.getPayment(paymentUid).getBody());
             return gatewayMapper.toPaymentDto(paymentResponse.get());
-        } catch (CircuitBreakerException e) {
+        }
+        catch (CircuitBreakerException e) {
             return createPaymentFallback(paymentUid);
+        }
+        catch (Exception e) {
+            log.info(e.getMessage());
+            throw new NotFoundException("");
         }
     }
 

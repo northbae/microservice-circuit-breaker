@@ -36,12 +36,18 @@ public class CircuitBreaker {
         boolean acquired = false;
         try {
             acquired = lock.tryLock(lockTimeout.toMillis(), TimeUnit.MILLISECONDS);
+            log.info("acquired = lock.tryLock(lockTimeout.toMillis(), TimeUnit.MILLISECONDS);");
             if (!acquired) {
                 throw new CircuitBreakerException("Circuit breaker lock timeout");
             }
+            log.info("if !aquired");
             if (state == CircuitBreakerState.OPEN) {
+                log.info("state == CircuitBreakerState.OPEN");
+
                 if (lastFailureTime != null && Duration.between(lastFailureTime, Instant.now()).compareTo(timeout) > 0) {
+                    log.info("lastFailureTime != null");
                     transitionTo(CircuitBreakerState.HALF_OPENED);
+                    log.info("transitionTo(CircuitBreakerState.HALF_OPENED);");
                 } else {
                     throw new CircuitBreakerException("Circuit breaker is OPEN");
                 }
@@ -54,7 +60,6 @@ public class CircuitBreaker {
                 lock.unlock();
             }
         }
-
         // Выполняем запрос
         try {
             T result = supplier.get();
@@ -62,7 +67,7 @@ public class CircuitBreaker {
             return result;
         } catch (Exception e) {
             onFailure();
-            throw e;
+            throw new CircuitBreakerException("");
         }
     }
 
