@@ -253,7 +253,7 @@ public class GatewayServiceImpl implements GatewayService {
             Optional<PaymentResponse> paymentResponse = circuitBreaker.execute(() ->
                     paymentClient.getPayment(paymentUid).getBody());
             return gatewayMapper.toPaymentDto(paymentResponse.get());
-        } catch (Exception e) {
+        } catch (CircuitBreakerException e) {
             return createPaymentFallback(paymentUid);
         }
     }

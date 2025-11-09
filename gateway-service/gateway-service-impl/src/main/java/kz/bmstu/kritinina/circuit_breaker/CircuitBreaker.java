@@ -46,7 +46,7 @@ public class CircuitBreaker {
                     throw new CircuitBreakerException("Circuit breaker is OPEN");
                 }
             }
-        } catch (InterruptedException e) {
+        } catch (Exception e) {
             Thread.currentThread().interrupt();
             throw new CircuitBreakerException("Interrupted while waiting for lock");
         } finally {
@@ -67,7 +67,6 @@ public class CircuitBreaker {
     }
 
     private void transitionTo(CircuitBreakerState newState) {
-        CircuitBreakerState oldState = this.state;
         this.state = newState;
         if (newState == CircuitBreakerState.HALF_OPENED) {
             successCount = 0;
