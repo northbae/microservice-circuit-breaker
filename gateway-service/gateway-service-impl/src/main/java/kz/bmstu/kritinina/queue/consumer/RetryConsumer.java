@@ -1,5 +1,7 @@
 package kz.bmstu.kritinina.queue.consumer;
 
+import kz.bmstu.kritinina.client.PaymentClient;
+import kz.bmstu.kritinina.client.RentalClient;
 import kz.bmstu.kritinina.queue.config.RabbitMqConfig;
 import kz.bmstu.kritinina.queue.message.RetryMessage;
 import kz.bmstu.kritinina.service.GatewayService;
@@ -10,36 +12,37 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class RetryConsumer {
     private final RabbitTemplate rabbitTemplate;
+    private final RentalClient rentalClient;
+    private final PaymentClient paymentClient;
 
     @RabbitListener(queues = RabbitMqConfig.RETRY_QUEUE)
     public void processRetryMessage(RetryMessage message) {
         try {
             switch (message.getOperationType()) {
-                case "BOOK_CAR":
-                    // Повторная попытка бронирования
-                    log.info("Retry successful for: {}", message.getOperationType());
+                case "FINISH_RENTAL":
+                    handleFinishRental(message);
+                    break;
+                case "CANCEL_RENTAL":
+                    handleCancelRental(message);
+                    break;
+                case "CANCEL_PAYMENT":
+                    handleCancelPayment(message);
                     break;
                 default:
                     log.warn("Unknown operation type: {}", message.getOperationType());
             }
 
         } catch (Exception e) {
-            log.error("Retry failed for: {}, error: {}",
-                    message.getOperationType(), e.getMessage());
-
             message.setRetryCount(message.getRetryCount() + 1);
             message.setFailureReason(e.getMessage());
-
             if (message.getRetryCount() < message.getMaxRetries()) {
-                log.info("Scheduling retry {}/{}",
-                        message.getRetryCount(), message.getMaxRetries());
-
                 rabbitTemplate.convertAndSend(
                         RabbitMqConfig.RETRY_EXCHANGE,
                         RabbitMqConfig.RETRY_ROUTING_KEY,
@@ -49,5 +52,22 @@ public class RetryConsumer {
                 log.error("Max retries reached for: {}", message.getOperationType());
             }
         }
+    }
+
+    private void handleFinishRental(RetryMessage message) {
+        UUID rentalUid = UUID.fromString((String) message.getPayload().get("rentalUid"));
+        String username = (String) message.getPayload().get("username");
+        rentalClient.finishRental(rentalUid, username);
+    }
+
+    private void handleCancelRental(RetryMessage message) {
+        UUID rentalUid = UUID.fromString((String) message.getPayload().get("rentalUid"));
+        String username = (String) message.getPayload().get("username");
+        rentalClient.cancelRental(rentalUid, username);
+    }
+
+    private void handleCancelPayment(RetryMessage message) {
+        UUID paymentUid = UUID.fromString((String) message.getPayload().get("paymentUid"));
+        paymentClient.cancelPayment(paymentUid);
     }
 }

@@ -17,7 +17,7 @@ public class RabbitMqConfig {
     @Bean
     public Queue retryQueue() {
         return QueueBuilder.durable(RETRY_QUEUE)
-                .withArgument("x-message-ttl", 60000) // 1 минута до retry
+                .withArgument("x-message-ttl", 10000)
                 .build();
     }
 

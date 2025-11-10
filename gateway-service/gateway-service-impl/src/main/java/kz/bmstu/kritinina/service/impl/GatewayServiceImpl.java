@@ -200,11 +200,13 @@ public class GatewayServiceImpl implements GatewayService {
 
         RentalResponse rentalResponse = rentalClient.getRentalById(rentalUid, username).getBody();
         carClient.changeAvailability(rentalResponse.getCarUid());
-        boolean rentalFinished = attemptFinishRentalWithTimeout(rentalUid, username);
-        if (!rentalFinished) {
+        CircuitBreaker circuitBreaker = circuitBreakerRegistry.getOrCreate("rental-service");
+        try {
+            circuitBreaker.execute(() -> rentalClient.finishRental(rentalUid, username));
+        }
+        catch (CircuitBreakerException e) {
             sendFinishRentalToQueue(rentalUid, username);
         }
-        //rentalClient.finishRental(rentalUid, username);
     }
 
     @Override
@@ -212,15 +214,18 @@ public class GatewayServiceImpl implements GatewayService {
         // что тут сделать = хрен пойми
         RentalResponse rentalResponse = rentalClient.getRentalById(rentalUid, username).getBody();
         carClient.changeAvailability(rentalResponse.getCarUid());
-        //rentalClient.cancelRental(rentalUid, username);
-        //paymentClient.cancelPayment(rentalResponse.getPaymentUid());
-        boolean rentalCancelled = attemptCancelRentalWithTimeout(rentalUid, username);
-
-        if (!rentalCancelled) {
+        CircuitBreaker circuitBreakerRental = circuitBreakerRegistry.getOrCreate("rental-service");
+        try {
+            circuitBreakerRental.execute(() -> rentalClient.cancelRental(rentalUid, username));
+        }
+        catch (CircuitBreakerException e) {
             sendCancelRentalToQueue(rentalUid, username, rentalResponse.getPaymentUid());
         }
-        boolean paymentCancelled = attemptCancelPaymentWithTimeout(rentalResponse.getPaymentUid());
-        if (!paymentCancelled) {
+        CircuitBreaker circuitBreakerPayment = circuitBreakerRegistry.getOrCreate("payment-service");
+        try {
+            circuitBreakerPayment.execute(() -> paymentClient.cancelPayment(rentalResponse.getPaymentUid()));
+        }
+        catch (CircuitBreakerException e) {
             sendCancelPaymentToQueue(rentalResponse.getPaymentUid(), rentalUid, username);
         }
     }
@@ -300,82 +305,13 @@ public class GatewayServiceImpl implements GatewayService {
         return fallback;
     }
 
-    private boolean attemptFinishRentalWithTimeout(UUID rentalUid, String username) {
-        int maxAttempts = 10;
-        int delayMs = 10000;
-
-        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
-            try {
-                rentalClient.finishRental(rentalUid, username);
-                return true;
-            } catch (Exception e) {
-                if (attempt < maxAttempts) {
-                    try {
-                        Thread.sleep(delayMs);
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        return false;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    private boolean attemptCancelRentalWithTimeout(UUID rentalUid, String username) {
-        int maxAttempts = 10;
-        int delayMs = 10000;
-        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
-            try {
-                rentalClient.cancelRental(rentalUid, username);
-                return true;
-
-            } catch (Exception e) {
-                if (attempt < maxAttempts) {
-                    try {
-                        Thread.sleep(delayMs);
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        return false;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    private boolean attemptCancelPaymentWithTimeout(UUID paymentUid) {
-        int maxAttempts = 10;
-        int delayMs = 10000;
-        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
-            try {
-                paymentClient.cancelPayment(paymentUid);
-                return true;
-
-            } catch (Exception e) {
-                if (attempt < maxAttempts) {
-                    try {
-                        Thread.sleep(delayMs);
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        return false;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-
     private void sendFinishRentalToQueue(UUID rentalUid, String username) {
         Map<String, Object> payload = new HashMap<>();
         payload.put("rentalUid", rentalUid.toString());
         payload.put("username", username);
         retryProducer.sendToRetryQueue(
                 "FINISH_RENTAL",
-                payload,
-                "Rental Service unavailable after 10 seconds timeout"
-        );
+                payload);
     }
 
     private void sendCancelRentalToQueue(UUID rentalUid, String username, UUID paymentUid) {
@@ -385,8 +321,7 @@ public class GatewayServiceImpl implements GatewayService {
         payload.put("paymentUid", paymentUid.toString());
         retryProducer.sendToRetryQueue(
                 "CANCEL_RENTAL",
-                payload,
-                "Rental Service unavailable after 10 seconds timeout"
+                payload
         );
     }
 
@@ -397,8 +332,7 @@ public class GatewayServiceImpl implements GatewayService {
         payload.put("username", username);
         retryProducer.sendToRetryQueue(
                 "CANCEL_PAYMENT",
-                payload,
-                "Payment Service unavailable after 10 seconds timeout"
+                payload
         );
     }
 }
