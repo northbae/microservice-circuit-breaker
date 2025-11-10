@@ -36,33 +36,21 @@ public class CircuitBreaker {
         boolean acquired = false;
         try {
             acquired = lock.tryLock(lockTimeout.toMillis(), TimeUnit.MILLISECONDS);
-            log.info("acquired = lock.tryLock(lockTimeout.toMillis(), TimeUnit.MILLISECONDS);");
             if (!acquired) {
                 throw new CircuitBreakerException("Circuit breaker lock timeout");
             }
-            log.info("if !aquired");
             if (state == CircuitBreakerState.OPEN) {
-                log.info("state == CircuitBreakerState.OPEN");
-                log.info(String.valueOf(lastFailureTime));
                 Duration timeSinceFailure = Duration.between(lastFailureTime, Instant.now());
-                log.info("Time since last failure: {}ms, timeout: {}ms",
-                        timeSinceFailure.toMillis(), timeout.toMillis());
-
                 if (lastFailureTime != null && timeSinceFailure.compareTo(timeout) > 0) {
-                    log.info("lastFailureTime != null");
                     transitionTo(CircuitBreakerState.HALF_OPENED);
-                    log.info("transitionTo(CircuitBreakerState.HALF_OPENED);");
                 } else {
-                    log.info("Circuit breaker is OPEN");
                     throw new CircuitBreakerException("Circuit breaker is OPEN");
                 }
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            log.info("Interrupted while waiting for lock");
             throw new CircuitBreakerException("Interrupted while waiting for lock");
-        } catch (Exception e) {  // ← Остальные логируем
-            log.error("Unexpected error in circuit breaker", e);
+        } catch (Exception e) {
             throw new CircuitBreakerException("Unexpected error: " + e.getMessage());
         }
         finally {
@@ -73,13 +61,11 @@ public class CircuitBreaker {
         // Выполняем запрос
         try {
             T result = supplier.get();
-            log.info("T result = supplier.get()");
             onSuccess();
             return result;
         } catch (Exception e) {
-            log.info("start onFailure");
             onFailure();
-            throw new CircuitBreakerException("");
+            throw new CircuitBreakerException("Service unavailable");
         }
     }
 
@@ -98,7 +84,6 @@ public class CircuitBreaker {
         try {
             failureCount = 0;
             if (state == CircuitBreakerState.HALF_OPENED) {
-                log.info("state == CircuitBreakerState.HALF_OPENED");
                 successCount++;
                 if (successCount >= minSuccess) {
                     transitionTo(CircuitBreakerState.CLOSED);

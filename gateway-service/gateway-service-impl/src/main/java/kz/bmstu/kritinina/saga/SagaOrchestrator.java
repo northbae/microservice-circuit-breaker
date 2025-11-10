@@ -12,7 +12,6 @@ public class SagaOrchestrator {
 
     public <T> T execute(List<SagaStep<?>> steps, SagaContext context) throws SagaException {
         Stack<SagaStep<?>> executedSteps = new Stack<>();
-
         try {
             for (SagaStep<?> step : steps) {
                 try {
@@ -28,7 +27,6 @@ public class SagaOrchestrator {
                 }
             }
             return (T) context.getResults().get(steps.get(steps.size() - 1).getName());
-
         } catch (Exception e) {
             if (!(e instanceof SagaException)) {
                 rollback(executedSteps, context);
@@ -44,7 +42,7 @@ public class SagaOrchestrator {
                 try {
                     step.getCompensation().accept(context);
                 } catch (Exception e) {
-
+                    throw new SagaException("Compensation method isnt work");
                 }
             }
         }

@@ -13,13 +13,11 @@ import kz.bmstu.kritinina.dto.CarDto;
 import kz.bmstu.kritinina.dto.CarResponse;
 import kz.bmstu.kritinina.dto.PaymentDto;
 import kz.bmstu.kritinina.dto.PaymentResponse;
-import kz.bmstu.kritinina.dto.PaymentStatus;
 import kz.bmstu.kritinina.dto.RentalCreationDto;
 import kz.bmstu.kritinina.dto.RentalDto;
 import kz.bmstu.kritinina.dto.RentalRequest;
 import kz.bmstu.kritinina.dto.RentalResponse;
 import kz.bmstu.kritinina.exception.InvalidOperationException;
-import kz.bmstu.kritinina.exception.NotFoundException;
 import kz.bmstu.kritinina.exception.ServiceUnavailableException;
 import kz.bmstu.kritinina.mapper.GatewayMapper;
 import kz.bmstu.kritinina.queue.producer.RetryProducer;
@@ -32,7 +30,6 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -197,7 +194,6 @@ public class GatewayServiceImpl implements GatewayService {
 
     @Override
     public void finishRental(String username, UUID rentalUid) {
-
         RentalResponse rentalResponse = rentalClient.getRentalById(rentalUid, username).getBody();
         carClient.changeAvailability(rentalResponse.getCarUid());
         CircuitBreaker circuitBreaker = circuitBreakerRegistry.getOrCreate("rental-service");
@@ -287,21 +283,9 @@ public class GatewayServiceImpl implements GatewayService {
         }
     }
 
-    private PaymentDto createPaymentFallback(UUID paymentUid) {
-        PaymentDto fallback = new PaymentDto();
-        fallback.setPaymentUid(paymentUid);
-        //fallback.setStatus(PaymentStatus.UNKNOWN);
-        //fallback.setPrice(0);
-        return fallback;
-    }
-
     private CarBaseDto createCarFallback(UUID carUid) {
-        final String unavailable = "Недоступно";
         CarBaseDto fallback = new CarBaseDto();
         fallback.setCarUid(carUid);
-        //fallback.setBrand(unavailable);
-        //fallback.setModel(unavailable);
-        //fallback.setRegistrationNumber(unavailable);
         return fallback;
     }
 

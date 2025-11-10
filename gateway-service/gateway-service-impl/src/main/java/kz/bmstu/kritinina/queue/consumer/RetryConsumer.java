@@ -42,15 +42,11 @@ public class RetryConsumer {
         } catch (Exception e) {
             message.setRetryCount(message.getRetryCount() + 1);
             message.setFailureReason(e.getMessage());
-            if (message.getRetryCount() < message.getMaxRetries()) {
-                rabbitTemplate.convertAndSend(
-                        RabbitMqConfig.RETRY_EXCHANGE,
-                        RabbitMqConfig.RETRY_ROUTING_KEY,
-                        message
-                );
-            } else {
-                log.error("Max retries reached for: {}", message.getOperationType());
-            }
+            rabbitTemplate.convertAndSend(
+                    RabbitMqConfig.RETRY_EXCHANGE,
+                    RabbitMqConfig.RETRY_ROUTING_KEY,
+                    message
+            );
         }
     }
 
