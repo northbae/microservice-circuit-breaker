@@ -295,7 +295,8 @@ public class GatewayServiceImpl implements GatewayService {
         payload.put("username", username);
         retryProducer.sendToRetryQueue(
                 "FINISH_RENTAL",
-                payload);
+                payload
+        );
     }
 
     private void sendCancelRentalToQueue(UUID rentalUid, String username, UUID paymentUid) {

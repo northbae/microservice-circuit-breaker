@@ -4,14 +4,12 @@ import kz.bmstu.kritinina.client.PaymentClient;
 import kz.bmstu.kritinina.client.RentalClient;
 import kz.bmstu.kritinina.queue.config.RabbitMqConfig;
 import kz.bmstu.kritinina.queue.message.RetryMessage;
-import kz.bmstu.kritinina.service.GatewayService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Slf4j
@@ -24,6 +22,12 @@ public class RetryConsumer {
 
     @RabbitListener(queues = RabbitMqConfig.RETRY_QUEUE)
     public void processRetryMessage(RetryMessage message) {
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
         try {
             switch (message.getOperationType()) {
                 case "FINISH_RENTAL":
