@@ -4,29 +4,37 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
-@Component
 @RequiredArgsConstructor
+@Component
 public class CircuitBreakerRegistry {
+    private final ConcurrentHashMap<String, CircuitBreaker> circuitBreakers =
+            new ConcurrentHashMap<>();
+    private final CircuitBreakerConfig defaultConfig;
 
-    private final Map<String, CircuitBreaker> circuitBreakers = new ConcurrentHashMap<>();
-    private final CircuitBreakerProperties properties;
-
-    public CircuitBreaker getOrCreate(String serviceName) {
-        return circuitBreakers.computeIfAbsent(serviceName, this::createCircuitBreaker);
+    public CircuitBreakerRegistry() {
+        this.defaultConfig = CircuitBreakerConfig.builder()
+                .slidingWindowSize(100)
+                .failureRateThreshold(50)
+                .minimumNumberOfCalls(10)
+                .waitDurationInOpenState(60000)
+                .permittedNumberOfCallsInHalfOpenState(10)
+                .build();
     }
 
-    private CircuitBreaker createCircuitBreaker(String serviceName) {
-        CircuitBreakerProperties.ServiceConfig config =
-                properties.getServices().getOrDefault(serviceName, properties.getDefaultConfig());
-        return new CircuitBreaker(
-                serviceName,
-                config.getMaxFailure(),
-                config.getMinSuccess(),
-                config.getTimeout()
-        );
+    public CircuitBreaker getOrCreate(String name) {
+        return circuitBreakers.computeIfAbsent(
+                name, k -> new CircuitBreaker(k, defaultConfig));
+    }
+
+    public CircuitBreaker getOrCreate(String name, CircuitBreakerConfig config) {
+        return circuitBreakers.computeIfAbsent(
+                name, k -> new CircuitBreaker(k, config));
+    }
+
+    public CircuitBreaker get(String name) {
+        return circuitBreakers.get(name);
     }
 }
